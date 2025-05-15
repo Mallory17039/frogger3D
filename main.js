@@ -1,16 +1,16 @@
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { STLLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/STLLoader.js';
+import * as three from './modules/three.module.js';
+import { STLLoader } from './modules/STLLoader.patched.js';
 
 
 // Scene setup
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
+const scene = new three.Scene();
+const camera = new three.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new three.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Lighting
-const light = new THREE.DirectionalLight(0xffffff, 1);
+const light = new three.DirectionalLight(0xffffff, 1);
 light.position.set(0, 10, 10);
 scene.add(light);
 
@@ -19,39 +19,53 @@ const tileSize = 2;
 const rows = 10;
 for (let i = 0; i < rows; i++) {
   const color = i % 2 === 0 ? 0x333333 : 0x888888;
-  const geometry = new THREE.PlaneGeometry(20, tileSize);
-  const material = new THREE.MeshStandardMaterial({ color });
-  const tile = new THREE.Mesh(geometry, material);
+  const geometry = new three.PlaneGeometry(20, tileSize);
+  const material = new three.MeshStandardMaterial({ color });
+  const tile = new three.Mesh(geometry, material);
   tile.rotation.x = -Math.PI / 2;
   tile.position.z = -i * tileSize;
   scene.add(tile);
 }
 
+
 // Player (STL model)
 let player;
+let chickenLight;
 const loader = new STLLoader();
 loader.load('./assets/chicken1.stl', (geometry) => {
-  const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-  player = new THREE.Mesh(geometry, material);
-  player.scale.set(0.02, 0.02, 0.02); // Adjust scale as needed
+  const material = new three.MeshStandardMaterial({ color: 0xd4af37 });
+  player = new three.Mesh(geometry, material);
+  player.scale.set(2, 2, 2); // Adjust scale as needed
   player.rotation.x = -Math.PI / 2; // STL models often need rotation
+  player.rotation.z = 1.55;
   player.position.set(0, 0.5, 0);
   scene.add(player);
+
+  // Create spotlight above the chicken
+  chickenLight = new three.SpotLight(0xffff00);
+  chickenLight.position.set(player.position.x, player.position.y + 5, player.position.z);
+  chickenLight.target = player;
+  chickenLight.power = 300;
+  chickenLight.penumbra = .5;
+  scene.add(chickenLight)
 });
+
+
+
 
 // Function to create a simple car shape
 function createCar() {
-  const car = new THREE.Group();
+  const car = new three.Group();
 
-  const bodyGeometry = new THREE.BoxGeometry(2, 0.5, 1);
-  const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-  const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+  const bodyGeometry = new three.BoxGeometry(2, 0.5, 1);
+  const bodyMaterial = new three.MeshStandardMaterial({ color: 0xff0000 });
+  const body = new three.Mesh(bodyGeometry, bodyMaterial);
   body.position.y = 0.25;
   car.add(body);
 
-  const roofGeometry = new THREE.BoxGeometry(1, 0.4, 0.8);
-  const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x990000 });
-  const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+  const roofGeometry = new three.BoxGeometry(1, 0.4, 0.8);
+  const roofMaterial = new three.MeshStandardMaterial({ color: 0x990000 });
+  const roof = new three.Mesh(roofGeometry, roofMaterial);
   roof.position.set(0, 0.65, 0);
   car.add(roof);
 
@@ -91,6 +105,12 @@ function animate() {
   requestAnimationFrame(animate);
 
   if (player && !gameWon) {
+
+    if (chickenLight) {
+      chickenLight.position.set(player.position.x, player.position.y + 5, player.position.z);
+      chickenLight.target.position.set(player.position.x, player.position.y, player.position.z);
+    }
+
     cars.forEach(car => {
       car.position.x += car.userData.speed;
       if (car.position.x > 10) car.position.x = -10;
