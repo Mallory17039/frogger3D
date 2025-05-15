@@ -51,8 +51,6 @@ loader.load('./assets/chicken1.stl', (geometry) => {
 });
 
 
-
-
 // Function to create a simple car shape
 function createCar() {
   const car = new three.Group();
@@ -91,7 +89,11 @@ document.addEventListener('keydown', (event) => {
   if (!player) return;
   const step = tileSize;
   if (event.key === 'ArrowUp') player.position.z -= step;
-  if (event.key === 'ArrowDown') player.position.z += step;
+  if (event.key === 'ArrowDown') {
+    const minZ = 0;
+    if (player.position.z + step > minZ) return;
+    player.position.z += step;
+  }
   if (event.key === 'ArrowLeft') player.position.x -= step;
   if (event.key === 'ArrowRight') player.position.x += step;
 });
