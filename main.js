@@ -1,6 +1,9 @@
 import * as three from './modules/three.module.js';
 import { STLLoader } from './modules/STLLoader.patched.js';
 
+// Level
+let currentLevel = 1;
+const maxLevel = 5;
 
 // Scene setup
 const scene = new three.Scene();
@@ -49,7 +52,10 @@ loader.load('./assets/chicken1.stl', (geometry) => {
   chickenLight.penumbra = .5;
   scene.add(chickenLight)
 });
-
+loader.load('./assets/chicken1.stl', (geometry) => {
+  // ... existing player setup ...
+  spawnCars(currentLevel); // Spawn cars for level 1
+});
 
 // Function to create a simple car shape
 function createCar() {
@@ -72,13 +78,20 @@ function createCar() {
 
 // Cars
 const cars = [];
-for (let i = 1; i < rows; i += 2) {
-  const car = createCar();
-  car.position.set(Math.random() * 10 - 5, 0, -i * tileSize);
-  car.userData.speed = (Math.random() * 0.1 + 0.05) * (Math.random() > 0.5 ? 1 : -1);
-  scene.add(car);
-  cars.push(car);
+function spawnCars(level) {
+  cars.forEach(car => scene.remove(car)); // Remove old cars
+  cars.length = 0;
+
+  for (let i = 1; i < rows; i += 2) {
+    const car = createCar();
+    car.position.set(Math.random() * 10 - 5, 0, -i * tileSize);
+    const baseSpeed = Math.random() * 0.1 + 0.05;
+    car.userData.speed = baseSpeed * (1 + (level - 1) * 0.5) * (Math.random() > 0.5 ? 1 : -1);
+    scene.add(car);
+    cars.push(car);
+  }
 }
+
 
 // Camera position
 camera.position.set(0, 10, 10);
@@ -131,12 +144,34 @@ function animate() {
       gameWon = true;
       const endTime = Date.now();
       const seconds = ((endTime - startTime) / 1000).toFixed(2);
-      setTimeout(() => {
-        alert(`🎉 You won! Record: ${seconds} seconds`);
-        player.position.set(0, 0.5, 0);
-        startTime = Date.now();
-        gameWon = false;
-      }, 100);
+        setTimeout(() => {
+          const endTime = Date.now();
+          const seconds = ((endTime - startTime) / 1000).toFixed(2);
+
+          if (currentLevel < maxLevel) {
+            const next = confirm(`🎉 You won Level ${currentLevel}! Time: ${seconds} seconds\n\nGo to Level ${currentLevel + 1}?`);
+            if (next) {
+              currentLevel++;
+              player.position.set(0, 0.5, 0);
+              spawnCars(currentLevel);
+            } else {
+              alert("Thanks for playing!");
+              currentLevel = 1;
+              player.position.set(0, 0.5, 0);
+              spawnCars(currentLevel);
+            }
+          } else {
+            alert(`🏆 You completed all ${maxLevel} levels! Final time: ${seconds} seconds`);
+            currentLevel = 1;
+            player.position.set(0, 0.5, 0);
+            spawnCars(currentLevel);
+      }
+
+  startTime = Date.now();
+  gameWon = false;
+}, 100);
+
+
     }
   }
 
