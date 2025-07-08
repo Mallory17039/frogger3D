@@ -3,7 +3,7 @@ import * as three from './modules/three.module.js';
 import { STLLoader } from './modules/STLLoader.patched.js';
 import { spawnCars, animateCars } from './cars.js';
 import { spawnBikes, animateBikes } from './bikes.js';
-import { spawnTrees, animateTrees } from './trees.js';
+import { spawnTrees, animateTrees, isPositionBlocked } from './trees.js';
 import { setupBackground } from './backgrounds.js';
 import { setupRoads } from './roads.js';
 
@@ -65,14 +65,34 @@ camera.lookAt(0, 0, 0);
 document.addEventListener('keydown', (event) => {
   if (!player) return;
   const step = tileSize;
-  if (event.key === 'ArrowUp') player.position.z -= step;
+  
+  if (event.key === 'ArrowUp') {
+    const newZ = player.position.z - step;
+    if (!isPositionBlocked(player.position.x, newZ)) {
+      player.position.z = newZ;
+    }
+  }
   if (event.key === 'ArrowDown') {
     const minZ = 0;
-    if (player.position.z + step > minZ) return;
-    player.position.z += step;
+    const newZ = player.position.z + step;
+    if (newZ <= minZ && !isPositionBlocked(player.position.x, newZ)) {
+      player.position.z = newZ;
+    }
   }
-  if (event.key === 'ArrowLeft') player.position.x -= step;
-  if (event.key === 'ArrowRight') player.position.x += step;
+  if (event.key === 'ArrowLeft') {
+    const newX = player.position.x - step;
+    const minX = -9; // Left boundary of the road
+    if (newX >= minX && !isPositionBlocked(newX, player.position.z)) {
+      player.position.x = newX;
+    }
+  }
+  if (event.key === 'ArrowRight') {
+    const newX = player.position.x + step;
+    const maxX = 9; // Right boundary of the road
+    if (newX <= maxX && !isPositionBlocked(newX, player.position.z)) {
+      player.position.x = newX;
+    }
+  }
 });
 
 // Timer and win tracking
@@ -92,7 +112,11 @@ function animate() {
 
     animateCars(player, scene, () => {
       alert("🚗 Game Over! Try again.");
+      currentLevel = 1;
       player.position.set(0, 0.5, 0);
+      spawnCars(scene, currentLevel, rows, tileSize);
+      spawnBikes(scene, currentLevel, rows, tileSize);
+      spawnTrees(scene, currentLevel, rows, tileSize);
       startTime = Date.now();
     });
 
@@ -100,9 +124,7 @@ function animate() {
       // Placeholder for bike collision logic
     });
 
-    animateTrees(player, scene, () => {
-      // Placeholder for tree collision logic
-    });
+    animateTrees(player, scene);
 
     if (player.position.z <= -((rows - 1) * tileSize)) {
       gameWon = true;
