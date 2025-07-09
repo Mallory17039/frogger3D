@@ -1,4 +1,3 @@
-
 import * as three from './modules/three.module.js';
 import { STLLoader } from './modules/STLLoader.patched.js';
 import { spawnCars, animateCars } from './cars.js';
@@ -25,7 +24,7 @@ scene.add(light);
 
 // Ground (alternating road and sidewalk)
 const tileSize = 2;
-const rows = 10;
+const rows = 16; // Increased from 10 to 16 (6 more rows)
 setupRoads(scene, tileSize, rows);
 
 // Player (STL model)
@@ -38,7 +37,7 @@ loader.load('./assets/chicken1.stl', (geometry) => {
   player.scale.set(2, 2, 2); // Adjust scale as needed
   player.rotation.x = -Math.PI / 2; // STL models often need rotation
   player.rotation.z = 1.55;
-  player.position.set(0, 0.5, 0);
+  player.position.set(0, 0.5, 0); // Spawn at the front row of the road
   scene.add(player);
 
   // Create spotlight above the chicken
@@ -58,8 +57,8 @@ loader.load('./assets/chicken1.stl', (geometry) => {
 });
 
 // Camera position
-camera.position.set(0, 10, 10);
-camera.lookAt(0, 0, 0);
+camera.position.set(0, 12, 2); // Higher up and closer for more top-down view
+camera.lookAt(0, 0, -8); // Look towards the middle of the level
 
 // Controls
 document.addEventListener('keydown', (event) => {
@@ -73,7 +72,7 @@ document.addEventListener('keydown', (event) => {
     }
   }
   if (event.key === 'ArrowDown') {
-    const minZ = 0;
+    const minZ = 0; // Can't go back past the starting row (front of road)
     const newZ = player.position.z + step;
     if (newZ <= minZ && !isPositionBlocked(player.position.x, newZ)) {
       player.position.z = newZ;
@@ -81,14 +80,14 @@ document.addEventListener('keydown', (event) => {
   }
   if (event.key === 'ArrowLeft') {
     const newX = player.position.x - step;
-    const minX = -9; // Left boundary of the road
+    const minX = -12; // Static left boundary
     if (newX >= minX && !isPositionBlocked(newX, player.position.z)) {
       player.position.x = newX;
     }
   }
   if (event.key === 'ArrowRight') {
     const newX = player.position.x + step;
-    const maxX = 9; // Right boundary of the road
+    const maxX = 12; // Static right boundary
     if (newX <= maxX && !isPositionBlocked(newX, player.position.z)) {
       player.position.x = newX;
     }
@@ -97,6 +96,7 @@ document.addEventListener('keydown', (event) => {
 
 // Timer and win tracking
 let startTime = Date.now();
+let cumulativeTime = 0; // Track total time across all levels
 let gameWon = false;
 
 // Animation loop
@@ -113,7 +113,8 @@ function animate() {
     animateCars(player, scene, () => {
       alert("🚗 Game Over! Try again.");
       currentLevel = 1;
-      player.position.set(0, 0.5, 0);
+      cumulativeTime = 0; // Reset cumulative time on game over
+      player.position.set(0, 0.5, 0); // Reset to front row of road
       spawnCars(scene, currentLevel, rows, tileSize);
       spawnBikes(scene, currentLevel, rows, tileSize);
       spawnTrees(scene, currentLevel, rows, tileSize);
@@ -129,39 +130,45 @@ function animate() {
     if (player.position.z <= -((rows - 1) * tileSize)) {
       gameWon = true;
       const endTime = Date.now();
-      const seconds = ((endTime - startTime) / 1000).toFixed(2);
+      const levelTime = (endTime - startTime) / 1000; // Time for this level
+      cumulativeTime += levelTime; // Add to cumulative time
+      const seconds = cumulativeTime.toFixed(2);
         setTimeout(() => {
-          const endTime = Date.now();
-          const seconds = ((endTime - startTime) / 1000).toFixed(2);
 
           if (currentLevel < maxLevel) {
-            const next = confirm(`🎉 You won Level ${currentLevel}! Time: ${seconds} seconds
+            const next = confirm(`🎉 You won Level ${currentLevel}!
+Level time: ${levelTime.toFixed(2)} seconds
+Total time: ${seconds} seconds
 
 Go to Level ${currentLevel + 1}?`);
             if (next) {
               currentLevel++;
-              player.position.set(0, 0.5, 0);
+              player.position.set(0, 0.5, 0); // Reset to front row of road
               spawnCars(scene, currentLevel, rows, tileSize);
               spawnBikes(scene, currentLevel, rows, tileSize);
               spawnTrees(scene, currentLevel, rows, tileSize);
+              startTime = Date.now(); // Reset timer for next level
             } else {
               alert("Thanks for playing!");
               currentLevel = 1;
-              player.position.set(0, 0.5, 0);
+              cumulativeTime = 0; // Reset cumulative time when restarting
+              player.position.set(0, 0.5, 0); // Reset to front row of road
               spawnCars(scene, currentLevel, rows, tileSize);
               spawnBikes(scene, currentLevel, rows, tileSize);
               spawnTrees(scene, currentLevel, rows, tileSize);
+              startTime = Date.now(); // Reset timer when restarting
             }
           } else {
-            alert(`🏆 You completed all ${maxLevel} levels! Final time: ${seconds} seconds`);
+            alert(`🏆 You completed all ${maxLevel} levels! Total time: ${seconds} seconds`);
             currentLevel = 1;
-            player.position.set(0, 0.5, 0);
+            cumulativeTime = 0; // Reset cumulative time when restarting
+            player.position.set(0, 0.5, 0); // Reset to front row of road
             spawnCars(scene, currentLevel, rows, tileSize);
             spawnBikes(scene, currentLevel, rows, tileSize);
             spawnTrees(scene, currentLevel, rows, tileSize);
+            startTime = Date.now(); // Reset timer when restarting
       }
 
-  startTime = Date.now();
   gameWon = false;
 }, 100);
 
@@ -171,5 +178,12 @@ Go to Level ${currentLevel + 1}?`);
 
   renderer.render(scene, camera);
 }
+
+// Handle window resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
 animate();

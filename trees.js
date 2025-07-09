@@ -17,7 +17,7 @@ export function spawnTrees(scene, level, rows, tileSize) {
     
     // Calculate grid positions - chicken moves in tileSize steps
     const gridPositions = [];
-    for (let x = -8; x <= 8; x += tileSize) {
+    for (let x = -12; x <= 12; x += tileSize) { // Static boundaries -12 to +12
       gridPositions.push(x);
     }
     
@@ -46,8 +46,10 @@ export function isPositionBlocked(x, z) {
   return trees.some(tree => {
     const dx = Math.abs(tree.position.x - x);
     const dz = Math.abs(tree.position.z - z);
-    // Check if position exactly matches tree position (grid-based)
-    return dx < 0.1 && dz < 0.1;
+    // Check if position matches tree position within tolerance
+    // Since both player and trees move on tileSize grid, use tileSize/2 as tolerance
+    const tolerance = 1; // Half of tileSize (2)
+    return dx < tolerance && dz < tolerance;
   });
 }
 
