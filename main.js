@@ -1,4 +1,3 @@
-
 import * as three from './modules/three.module.js';
 import { STLLoader } from './modules/STLLoader.patched.js';
 import { spawnCars, animateCars } from './cars.js';
@@ -42,7 +41,7 @@ loader.load('./assets/chicken1.stl', (geometry) => {
   scene.add(player);
 
   // Create spotlight above the chicken
-  chickenLight = new three.SpotLight(0xffff00);
+  chickenLight = new three.SpotLight(0xffffff); // 0xffffff is white
   chickenLight.position.set(player.position.x, player.position.y + 5, player.position.z);
   chickenLight.target = player;
   chickenLight.power = 300;
