@@ -1,14 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>3D Road Crossing Game</title>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
-  </style>
+    <meta charset="UTF-8" />
+    <title>3D Road Crossing Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .game-title {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 16px 0;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            text-align: center;
+            font-size: 1.5em;
+            font-family: sans-serif;
+            z-index: 10;
+            pointer-events: none; /* Allows clicks to pass through */
+        }
+    </style>
 </head>
 <body>
-  <script type="module" src="main.js"></script>
+    <script type="module" src="main.js"></script>
+    <div class="game-title">3D Road Crossing Game</div>
 </body>
 </html>
